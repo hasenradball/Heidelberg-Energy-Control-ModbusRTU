@@ -1,5 +1,5 @@
 # ignore specific files
-
+HD_EnergyControl_send_maxSystemCurrent.py
 # ignore log files
 *log.txt
 
