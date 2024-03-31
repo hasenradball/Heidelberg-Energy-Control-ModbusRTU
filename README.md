@@ -1,6 +1,7 @@
 # Heidelberg-Energy-Control-ModbusRTU
 python solution for connecting the Heidelberg-EnergyControl Wallbox via ModbusRTU
 
+![HD_Engery_Control](./docs/HD_EnergyControl.jpg)
 
 ## Contents
 * [Prerecquisites](#prerecquisites)
