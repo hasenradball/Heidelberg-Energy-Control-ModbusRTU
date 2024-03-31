@@ -1,21 +1,21 @@
-#!/usr/bin/python3
+"""Class for connecting and insert into mariaDB"""
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import mysql.connector
 from mysql.connector import errorcode
 
 
 class mariaDB_mysql:
-    '''
-    class to connect to mariaDB and update the table
-    '''
+    """class to connect to mariaDB and update the table
+    """
     def __init__(self, config):
         self._config = config
 
-    def mariaBD_insert(self, values):
-        '''
-        function to update mariaDB table
-        '''
-        
+    def mariaBD_insert(self, values) -> bool:
+        """Function to update mariaDB table
+        -----
+        """
+
         try:
             # connect to db
             cnx = mysql.connector.connect(**self._config)
@@ -31,7 +31,7 @@ class mariaDB_mysql:
                 print("ERROR: Connection!")
                 return False
             else:
-                print("ERROR: {}".format(err.errno))
+                print(f"ERROR: {err.errno}")
                 return False
         else:
             try:
@@ -45,10 +45,10 @@ class mariaDB_mysql:
                 cnx.commit()
             except mysql.connector.Error as err:
                 if err.errno == errorcode.ER_PARSE_ERROR:
-                    print("ERROR: Syntax! ({})".format(err.errno))
+                    print(f"ERROR: Syntax! ({err.errno})")
                     return False
                 else:
-                    print("ERROR: {}".format(err.errno))
+                    print(f"ERROR: {err.errno}")
                     return False
             cursor.close()
             cnx.close()
