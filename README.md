@@ -17,6 +17,7 @@ python3 -m pip install pyserial
 ```
     
 >Remark: for pymodbus use minimum the version of 3.6.x
+>Remark: for pymodbus use minimum the version of 3.6.x
 
 ## Usage
 Check the python code in the script `HD_EnergyControl_ModbusRTU.py`.<br>
@@ -28,7 +29,9 @@ obj = HD_EnergyControl("/dev/ttyAMA0", 1)
 
 Then you can check the communucation via:
 
-`python3 HD_EnergyControl_ModbusRTU.py`
+```
+python3 HD_EnergyControl_ModbusRTU.py
+```
 
 # License
 This library is licensed under MIT Licence.
