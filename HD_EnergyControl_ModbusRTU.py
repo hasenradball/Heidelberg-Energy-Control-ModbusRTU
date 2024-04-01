@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+"""Script to test connection of HD Energy Control"""
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from cHD_EnergyControl import HD_EnergyControl
@@ -6,11 +7,12 @@ from cHD_EnergyControl import HD_EnergyControl
 # Main
 if __name__ == "__main__":
     try:
-        obj = HD_EnergyControl(1, "/dev/ttyAMA0")
+        obj = HD_EnergyControl("/dev/ttyAMA0", 1)
     except NameError as error:
         print(f"\n\tName Error: {error}, {type(error)}!\n")
     except Exception as error:
-        print(f"\n\tERROR: {error}, {type(error)}\n\tError in creating hd_energyControl_mb object!\n")
+        print(f"\n\tERROR: {error}, {type(error)} \
+              \n\tError in creating hd_energyControl_mb object!\n")
     else:
         try:
             obj.connect()

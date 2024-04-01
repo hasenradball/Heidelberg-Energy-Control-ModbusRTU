@@ -1,6 +1,7 @@
 # Heidelberg-Energy-Control-ModbusRTU
 python solution for connecting the Heidelberg-EnergyControl Wallbox via ModbusRTU
 
+![HD_Engery_Control](./docs/HD_EnergyControl.jpg)
 
 ## Contents
 * [Prerecquisites](#prerecquisites)
@@ -11,16 +12,30 @@ python solution for connecting the Heidelberg-EnergyControl Wallbox via ModbusRT
 ## Prerecquisites
 1) For the use of this python code it is necessary to install the python libs `pymodbus` and `pyserial`:
 
-    `python3 -m pip install pymodbus`
-    `python3 -m pip install pyserial`
+```
+python3 -m pip install pymodbus
+python3 -m pip install pyserial
+```
     
-    Remark: use the minimum the version of 3.6.x
+>Remark: for pymodbus use minimum the version of 3.6.x
+>Remark: for pymodbus use minimum the version of 3.6.x
 
 ## Usage
-Check the python code in the script `HD_EnergyControl_ModbusRTU.py` and change the settings if necessary.
+Check the python code in the script `HD_EnergyControl_ModbusRTU.py`.<br>
+Change the following line according to your serial device.
+
+```
+obj = HD_EnergyControl("/dev/ttyAMA0", 1)
+```
+The HD_EngeryControl constructor takes two arguments:
+- **port** - where the wall box is connected to (default "/dev/ttyAMA0")
+- **UnitID** - the unit id in the bus (default 1)
+
 Then you can check the communucation via:
 
-`python3 HD_EnergyControl_ModbusRTU.py`
+```
+python3 HD_EnergyControl_ModbusRTU.py
+```
 
 # License
 This library is licensed under MIT Licence.
