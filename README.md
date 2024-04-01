@@ -27,6 +27,9 @@ Change the following line according to your serial device.
 ```
 obj = HD_EnergyControl("/dev/ttyAMA0", 1)
 ```
+The HD_EngeryControl constructor takes two arguments:
+- **port** - where the wall box is connected to (default "/dev/ttyAMA0")
+- **UnitID** - the unit id in the bus (default 1)
 
 Then you can check the communucation via:
 
