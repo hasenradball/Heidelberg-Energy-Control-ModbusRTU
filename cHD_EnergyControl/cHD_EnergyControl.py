@@ -144,9 +144,9 @@ class HD_EnergyControl(ModbusRTU):
         """
         current_list = self.read_input_register(6, 'U16', 3)
         i = tuple(i/10 for i in current_list)
-        print(f'[006]\t\tL1 Current (rms) : {i[1]:.2f} A')
-        print(f'[007]\t\tL2 Current (rms) : {i[2]:.2f} A')
-        print(f'[008]\t\tL3 Current (rms) : {i[3]:.2f} A', end='\n\n')
+        print(f'[006]\t\tL1 Current (rms) : {i[0]:.2f} A')
+        print(f'[007]\t\tL2 Current (rms) : {i[1]:.2f} A')
+        print(f'[008]\t\tL3 Current (rms) : {i[2]:.2f} A', end='\n\n')
         return i
 
     def get_pcb_temperature(self) -> float:
@@ -180,9 +180,9 @@ class HD_EnergyControl(ModbusRTU):
         """
         voltage_list = self.read_input_register(10, 'U16', 3)
         u = tuple(voltage_list)
-        print(f'[010]\t\tL1 Voltage (rms) : {u[1]:.1f} V')
-        print(f'[011]\t\tL2 Voltage (rms) : {u[2]:.1f} V')
-        print(f'[012]\t\tL3 Voltage (rms) : {u[3]:.1f} V', end='\n\n')
+        print(f'[010]\t\tL1 Voltage (rms) : {u[0]:.1f} V')
+        print(f'[011]\t\tL2 Voltage (rms) : {u[1]:.1f} V')
+        print(f'[012]\t\tL3 Voltage (rms) : {u[2]:.1f} V', end='\n\n')
         return u
 
     def get_extern_lock_state(self) -> int:
