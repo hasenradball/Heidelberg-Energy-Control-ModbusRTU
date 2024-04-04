@@ -5,20 +5,34 @@ import mysql.connector
 from mysql.connector import errorcode
 
 
-class mariaDB_mysql:
-    """class to connect to mariaDB and update the table
-    """
+class cMariaDB_mysql:
+    """Class connecting MariaDB Database"""
+
     def __init__(self, config):
-        self._config = config
-
-    def mariaBD_insert(self, values) -> bool:
-        """Function to update mariaDB table
+        """Contructor of cMariaDB_mysql class 
         -----
-        """
 
+        Args:
+            config: configuration for mariaDB access
+        """
+        self._config = config
+        # call connect to have the connection object inside
+        self.connector = self.connect()
+
+    def __del__(self):
+        #destoy the connector object
+        #print("Call destructor")
+        self.connector.close()
+
+    def connect(self):
+        """Method to establish connection to database
+        -----
+
+        Returns:
+            MySQLConnection object or False
+        """
         try:
-            # connect to db
-            cnx = mysql.connector.connect(**self._config)
+            connector_obj = mysql.connector.connect(**self._config)
             #print("cnx: ", cnx)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -34,25 +48,62 @@ class mariaDB_mysql:
                 print(f"ERROR: {err.errno}")
                 return False
         else:
-            try:
-                # cursor object
-                cursor = cnx.cursor()
-                # => use procedure keep in mind ...
-                #tablecolumns_E = "`E_import_tot`, `E_export_tot`"
-                tablevalues = values
-                #print(tablevalues)
-                cursor.callproc("add_wb_data", tablevalues)
-                cnx.commit()
-            except mysql.connector.Error as err:
-                if err.errno == errorcode.ER_PARSE_ERROR:
-                    print(f"ERROR: Syntax! ({err.errno})")
-                    return False
-                else:
-                    print(f"ERROR: {err.errno}")
-                    return False
+            #print("Connection: successfully established!")
+            return connector_obj
+
+    def insert_by_stored_procedure(self, prodedure_name, arguments) -> bool:
+        """Insert data into mariaDB by calling a strored procedure
+        -----
+
+        Args:
+            procedure_name: name of the stored procedure function
+            arguments: function parameters for the stored procedure
+
+        Returns:
+            True when successful or False when failed
+        """
+        try:
+            cursor = self.connector.cursor()
+            cursor.callproc(prodedure_name, arguments)
+            self.connector.commit()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_PARSE_ERROR:
+                print(f"ERROR: Syntax! ({err.errno})")
+                return False
+            else:
+                print(f"ERROR: {err.errno}")
+                return False
+        else:
             cursor.close()
-            cnx.close()
-        finally:
-            #print("finally")
-            pass
-        return True
+            return True
+
+    def insert_by_sql_insert_stmt(self, table, columns, values) -> bool:
+        """Insert data into mariaDB by insert statement
+        -----
+
+        Args:
+            table: string 
+            columns: tuple 
+            values: tuple
+
+        Returns:
+            True when successful or False when failed
+        """
+        try:
+            cursor = self.connector.cursor()
+            cols_sql = ", ".join(i.replace("\"", "") for i in columns)
+            print(cols_sql)
+            # INSERT INTO `waermepumpe`.`energie` (E_import_tot, E_export_tot) VALUES(20.9, 31.4)
+            query_str = f"INSERT INTO `{self._config['database']}`.`{table}` ({cols_sql}) VALUES{str(values)}"
+            cursor.execute(query_str)
+            self.connector.commit()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_PARSE_ERROR:
+                print(f"ERROR: Syntax! ({err.errno})")
+                return False
+            else:
+                print(f"ERROR: {err.errno}")
+                return False
+        else:
+            cursor.close()
+            return True
