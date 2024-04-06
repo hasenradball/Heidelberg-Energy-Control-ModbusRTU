@@ -1,5 +1,4 @@
 # ignore specific files
-HD_EnergyControl_send_maxSystemCurrent.py
 mariadb_config.py
 # ignore log files
 *log.txt
