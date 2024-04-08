@@ -34,5 +34,5 @@ class HdEcConstants:
                10: 'Wallbox locked or not ready', \
                11: 'Error'}
     
-    STANDBY_FUNCTION = {0: 'enable StandBy Function', \
-                        4: 'disable StandBy Function'}
+    STANDBY_FUNCTION = {0: 'Standby function enabled', \
+                        4: 'Standby function disabled'}
