@@ -25,6 +25,7 @@ class ModbusRTU:
     def __del__(self):
         """ Desctructor of ModbusRTU
         """
+        self.close()
         del self._client
         del self._device_unit_id
 
@@ -60,12 +61,15 @@ class ModbusRTU:
         try:
             result = self._client.read_input_registers(register_address, length, \
                                                      slave=self._device_unit_id)
+            #print(result, type(result))
         except ModbusException as exc:
-            print(f"received ModbusException({exc}) from library")
-            raise exc
+            print(f">>> read_input_register: Received ModbusException({exc}) from library")
         if result.isError():
-            print("Received Modbus library error({result})")
-            raise ModbusException(result)
+            print(f">>> read_input_register: Received Modbus library error({result})")
+        if isinstance(result, ExceptionResponse):
+            print(f">>> read_input_register: Received Modbus library exception ({result})")
+            # THIS IS NOT A PYTHON EXCEPTION, but a valid modbus message
+            return False
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -79,12 +83,15 @@ class ModbusRTU:
         try:
             result = self._client.read_holding_registers(register_address, length, \
                                                      slave=self._device_unit_id)
+            #print(result, type(result))
         except ModbusException as exc:
-            print(f"received ModbusException({exc}) from library")
-            raise exc
+            print(f">>> read_holding_register: Received ModbusException({exc}) from library")
         if result.isError():
-            print("Received Modbus library error({result})")
-            raise ModbusException(result)
+            print(f">>> read_holding_register: Received Modbus library error({result})")
+        if isinstance(result, ExceptionResponse):
+            print(f">>> read_holding_register: Received Modbus library exception ({result})")
+            # THIS IS NOT A PYTHON EXCEPTION, but a valid modbus message
+            return False
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -112,20 +119,18 @@ class ModbusRTU:
         """Write register method (code 0x06) with error handling
         """
         try:
-            result = self._client.write_register(register_address, register_value, \
+            result = self._client.write_registers(register_address, register_value, \
                                                      slave=self._device_unit_id)
-            #print(result)
-            return True
+            #print(result, type(result))
         except ModbusException as exc:
-            print(f"Received ModbusException({exc}) from library")
-            return False
+            print(f">>> write_register: Received ModbusException({exc}) from library")
         if result.isError():
-            print(f"Received Modbus library error({result})")
-            return False
+            print(f">>> write_register: Received Modbus library error({result})")
         if isinstance(result, ExceptionResponse):
-            print(f"Received Modbus library exception ({result})")
+            print(f">>> write_register: Received Modbus library exception ({result})")
             # THIS IS NOT A PYTHON EXCEPTION, but a valid modbus message
             return False
+        return True
 
 
 
@@ -146,7 +151,7 @@ class HDEnergyControl(ModbusRTU):
         version_dec = self.read_input_register(4, 'U16')[0]
         #print(type(result.registers), ": ", result.registers)
         version_hex = f"{version_dec:0x}"
-        version_str = f"v{'.'.join(f'{char:c}' for char in version_hex)}"
+        version_str = f"v{'.'.join(f'{char}' for char in version_hex)}"
         #print(f'[004]\t\tRegister-Layout : {version_str}', end='\n\n')
         return version_str
 
@@ -513,7 +518,7 @@ class HDEnergyControl(ModbusRTU):
         # first read the actual regisster value if it is already the same => no need to write again
         actual_current = self.get_maximal_current_command()
         if actual_current == max_current:
-            print(f'\tvalue not writen, {max_current} is already set!', end='\n\n')
+            print(f'[set_maximal_current_command]: value not writen, {max_current} A is already set!', end='\n\n')
             return False
         else:
             result = self.write_register(261, _max_current)
