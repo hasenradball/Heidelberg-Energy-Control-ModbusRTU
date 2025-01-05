@@ -2,12 +2,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cHD_EnergyControl import HD_EnergyControl
+from hd_energy_control import HDEnergyControl
 
 # Main
 if __name__ == "__main__":
     try:
-        obj = HD_EnergyControl("/dev/ttyAMA0", 1)
+        obj = HDEnergyControl("/dev/ttyAMA0", 1)
     except NameError as error:
         print(f"\n\tName Error: {error}, {type(error)}!\n")
     except Exception as error:
@@ -27,14 +27,14 @@ if __name__ == "__main__":
             print(f'L1 Voltage (rms) : {u[0]:.1f} V')
             print(f'L2 Voltage (rms) : {u[1]:.1f} V')
             print(f'L3 Voltage (rms) : {u[2]:.1f} V', end='\n\n')
-            
+
             print(f'extern lock state : {obj.get_extern_lock_state()}')
             print(f'Power : {obj.get_power()} VA', end='\n\n')
-            
+
             print(f'energy since power on     : {obj.get_energy_since_power_on()/1000.0} kVAh')
             print(f'energy since installation : {obj.get_energy_since_installation()/1000.0} kVAh')
-            print(f'hw config current max : {obj.get_hw_config_max_current()} A') 
-            print(f'hw config current min : {obj.get_hw_config_min_current()} A') 
+            print(f'hw config current max : {obj.get_hw_config_max_current()} A')
+            print(f'hw config current min : {obj.get_hw_config_min_current()} A')
             print(f'appication sw revision : {obj.get_application_software_revision()}')
             print(f'watchdog timeout : {obj.get_watchdog_timeout()} ms')
             #obj.set_watchdog_timeout(65535)

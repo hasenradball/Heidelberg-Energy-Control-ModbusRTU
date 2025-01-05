@@ -1,12 +1,12 @@
-"""Energy Control ModbusRTU implementation"""
+"""module providing HD Energy Control ModbusRTU implementation"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.client import ModbusSerialClient as ModBusClient
-from .Constants import HdEcConstants as CONSTS
 from pymodbus import (ExceptionResponse, ModbusException)
+from .constants import HDEnergyControlConstants as CONSTS
 
 class ModbusRTU:
     """Base class for ModbusRTU
@@ -37,8 +37,8 @@ class ModbusRTU:
                 print("INFO: client connected successfully to Modbus-RTU Device!", end='\n\n')
             else:
                 print("ERROR: client cannot connect to Modbus-RTU Device!")
-        except:
-            print("ERROR: Propably an Syntax Error!")
+        except Exception as exc:
+            print(f"ERROR: received exception {exc}! Propably an Syntax Error!")
 
         finally:
             pass
@@ -63,11 +63,9 @@ class ModbusRTU:
         except ModbusException as exc:
             print(f"received ModbusException({exc}) from library")
             raise exc
-            return None
         if result.isError():
             print("Received Modbus library error({result})")
-            raise ModbusException(txt)
-            return None
+            raise ModbusException(result)
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -84,11 +82,9 @@ class ModbusRTU:
         except ModbusException as exc:
             print(f"received ModbusException({exc}) from library")
             raise exc
-            return None
         if result.isError():
             print("Received Modbus library error({result})")
-            raise ModbusException(txt)
-            return None
+            raise ModbusException(result)
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -99,6 +95,7 @@ class ModbusRTU:
         decoder = BinaryPayloadDecoder.fromRegisters(readings.registers, \
                                                      byteorder=Endian.BIG, wordorder=Endian.BIG)
         #print(f'decoder : {decoder}')
+        data = []
         if datatype == 'U16':
             data = [decoder.decode_16bit_uint() for i in range(count)]
         elif datatype == 'U32':
@@ -132,7 +129,7 @@ class ModbusRTU:
 
 
 
-class HD_EnergyControl(ModbusRTU):
+class HDEnergyControl(ModbusRTU):
     """class for connecting the Wallbox Heidelberg Energy Control
     """
     def get_register_layout_version(self) -> str:
@@ -149,7 +146,7 @@ class HD_EnergyControl(ModbusRTU):
         version_dec = self.read_input_register(4, 'U16')[0]
         #print(type(result.registers), ": ", result.registers)
         version_hex = f"{version_dec:0x}"
-        version_str = "v{}".format(".".join("%c" %char for char in version_hex))
+        version_str = f"v{'.'.join(f'{char:c}' for char in version_hex)}"
         #print(f'[004]\t\tRegister-Layout : {version_str}', end='\n\n')
         return version_str
 
@@ -431,7 +428,7 @@ class HD_EnergyControl(ModbusRTU):
         #print(f'[258]\t\tStandBy Function set to : {CONSTS.STANDBY_FUNCTION[self.get_standby_function_control()]} ', end='\n\n')
         return result
 
-    
+
     def get_remote_lock(self) -> tuple:
         """Get the Remote lock state
         -----
@@ -445,7 +442,7 @@ class HD_EnergyControl(ModbusRTU):
         result = self.read_holding_register(259, 'U16')[0]
         #print(f'[259]\t\tRemote-Lock state : {CONSTS.REMOTE_LOCK[result]}', end='\n\n')
         return (result, CONSTS.REMOTE_LOCK[result])
-    
+
     def set_remote_lock(self, state) -> bool:
         """Set the Remote lock state
         -----
@@ -510,17 +507,17 @@ class HD_EnergyControl(ModbusRTU):
             # bound value to max of 16.0 A
             max_current = 16.0
         elif max_current < 6.0:
-            print (f'Your Input value ({max_current}) is interpreted a 0.0 A, because the value is below 6.0 A')
+            print (f'Input ({max_current}) is bound to 0 A, due to HW restriction < 6.0 A')
         _max_current = int(max_current * 10)
 
         # first read the actual regisster value if it is already the same => no need to write again
         actual_current = self.get_maximal_current_command()
         if actual_current == max_current:
-            print(f'\tNo need to write into register, because the desired value {max_current} is already in register!', end='\n\n')
+            print(f'\tvalue not writen, {max_current} is already set!', end='\n\n')
             return False
         else:
             result = self.write_register(261, _max_current)
-            #print(f'[261]\t\tMaximal Charging Current set to : {self.get_maximal_current_command()} A', end='\n\n')
+            #print(f'[261]\t\tMax Charging Current set to : {self.get_maximal_current_command()} A', end='\n\n')
             return result
 
 
@@ -555,7 +552,7 @@ class HD_EnergyControl(ModbusRTU):
             # bound value to max of 16.0 A
             fs_current = 16.0
         elif fs_current < 6.0:
-            print (f'Your Input fs_current({fs_current}) is interpreted a 0.0 A, because the value is below 6.0 A')
+            print (f'Input ({fs_current}) is bound to 0 A, due to HW restriction < 6.0 A')
         _fs_current = int(fs_current * 10)
         result = self.write_register(262, _fs_current)
         #print(f'[262]\t\tFailSafe Current set to : {self.get_failsafe_current_config()}', end='\n\n')

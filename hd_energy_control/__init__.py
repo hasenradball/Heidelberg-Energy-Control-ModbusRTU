@@ -1,4 +1,4 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .cHD_EnergyControl import HD_EnergyControl
+from .hd_energy_control import HDEnergyControl
