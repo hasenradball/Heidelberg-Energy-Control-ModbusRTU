@@ -21,11 +21,11 @@ python3 -m pip install pyserial
 >Remark: for pymodbus use minimum the version of 3.6.x
 
 ## Usage
-Check the python code in the script `HD_EnergyControl_ModbusRTU.py`.<br>
+Check the python code in the script `hd_energy_control_modbus_rtu.py`.<br>
 Change the following line according to your serial device.
 
 ```
-obj = HD_EnergyControl("/dev/ttyAMA0", 1)
+obj = HDEnergyControl("/dev/ttyAMA0", 1)
 ```
 The HD_EngeryControl constructor takes two arguments:
 - **port** - where the wall box is connected to (default "/dev/ttyAMA0")
