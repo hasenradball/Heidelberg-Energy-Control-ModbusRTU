@@ -3,7 +3,7 @@
 # -*- coding: utf-8 -*-
 
 from hd_energy_control import HDEnergyControl
-from cMariaDB_mysql import cMariaDB_mysql as maria_db
+from maria_db_mysql import MariaDBMysql as maria_db
 from mariadb_config import MARIA_DB_CONFIG
 
 # Main
