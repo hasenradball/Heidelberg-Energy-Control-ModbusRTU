@@ -36,4 +36,5 @@ if __name__ == "__main__":
         print(f"\n\tERROR: {error}, {type(error)}\n\tPossibly the device is in standBy-Mode!\n")
 
     finally:
+        obj.close()
         print("INFO: test finished!")
