@@ -2,16 +2,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from cHD_EnergyControl import HD_EnergyControl
+from hd_energy_control import HDEnergyControl
 from cMariaDB_mysql import cMariaDB_mysql as maria_db
 from mariadb_config import MARIA_DB_CONFIG
 
 # Main
 if __name__ == "__main__":
     try:
-        obj = HD_EnergyControl("/dev/ttyAMA0", 1)
+        obj = HDEnergyControl("/dev/ttyAMA0", 1)
         obj.connect()
-        
+
         obj.set_maximal_current_command()
         currents = obj.get_currents_rms()
         voltages = obj.get_voltages_rms()
@@ -22,9 +22,8 @@ if __name__ == "__main__":
         values_for_db = (*currents, *voltages, power, temperature, energy_since_wake, energy_total)
         #print("values for DB", values_for_db)
 
-        
         maria_obj = maria_db(MARIA_DB_CONFIG)
-        ret = maria_obj.insert_by_stored_procedure("add_wb_data", values_for_db)
+        maria_obj.insert_by_stored_procedure("add_wb_data", values_for_db)
 
     except NameError as error:
         print(f"\n\tName Error: {error}, {type(error)}!\n")
