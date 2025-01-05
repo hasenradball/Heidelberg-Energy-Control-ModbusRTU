@@ -5,7 +5,7 @@ import mysql.connector
 from mysql.connector import errorcode
 
 
-class cMariaDB_mysql:
+class MariaDBMysql:
     """Class connecting MariaDB Database"""
 
     def __init__(self, config):
