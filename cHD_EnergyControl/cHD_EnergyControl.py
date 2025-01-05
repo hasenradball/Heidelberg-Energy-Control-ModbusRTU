@@ -6,6 +6,7 @@ from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.client import ModbusSerialClient as ModBusClient
 from .Constants import HdEcConstants as CONSTS
+from pymodbus import (ExceptionResponse, ModbusException)
 
 class ModbusRTU:
     """Base class for ModbusRTU
@@ -22,6 +23,8 @@ class ModbusRTU:
 
 
     def __del__(self):
+        """ Desctructor of ModbusRTU
+        """
         del self._client
         del self._device_unit_id
 
@@ -54,8 +57,17 @@ class ModbusRTU:
         """
         length = CONSTS.TYPE_TO_LENGTH[datatype] * count
         #print(f'length : {length}')
-        result = self._client.read_input_registers(register_address, length, \
-                                                   slave=self._device_unit_id)
+        try:
+            result = self._client.read_input_registers(register_address, length, \
+                                                     slave=self._device_unit_id)
+        except ModbusException as exc:
+            print(f"received ModbusException({exc}) from library")
+            raise exc
+            return None
+        if result.isError():
+            print("Received Modbus library error({result})")
+            raise ModbusException(txt)
+            return None
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -66,8 +78,17 @@ class ModbusRTU:
         """
         length = CONSTS.TYPE_TO_LENGTH[datatype] * count
         #print(f'length : {length}')
-        result = self._client.read_holding_registers(register_address, length, \
+        try:
+            result = self._client.read_holding_registers(register_address, length, \
                                                      slave=self._device_unit_id)
+        except ModbusException as exc:
+            print(f"received ModbusException({exc}) from library")
+            raise exc
+            return None
+        if result.isError():
+            print("Received Modbus library error({result})")
+            raise ModbusException(txt)
+            return None
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -90,12 +111,31 @@ class ModbusRTU:
             data = [decoder.decode_32bit_int() for i in range(count)]
         return data
 
+    def write_register(self, register_address, register_value):
+        """Write register method (code 0x06) with error handling
+        """
+        try:
+            result = self._client.write_register(register_address, register_value, \
+                                                     slave=self._device_unit_id)
+            #print(result)
+            return True
+        except ModbusException as exc:
+            print(f"Received ModbusException({exc}) from library")
+            return False
+        if result.isError():
+            print(f"Received Modbus library error({result})")
+            return False
+        if isinstance(result, ExceptionResponse):
+            print(f"Received Modbus library exception ({result})")
+            # THIS IS NOT A PYTHON EXCEPTION, but a valid modbus message
+            return False
+
 
 
 class HD_EnergyControl(ModbusRTU):
     """class for connecting the Wallbox Heidelberg Energy Control
     """
-    def get_register_layout_version(self):
+    def get_register_layout_version(self) -> str:
         """Get register layout version
         
         Read out the Register Layout Version
@@ -110,10 +150,10 @@ class HD_EnergyControl(ModbusRTU):
         #print(type(result.registers), ": ", result.registers)
         version_hex = f"{version_dec:0x}"
         version_str = "v{}".format(".".join("%c" %char for char in version_hex))
-        print(f'[004]\t\tRegister-Layout : {version_str}', end='\n\n')
+        #print(f'[004]\t\tRegister-Layout : {version_str}', end='\n\n')
         return version_str
 
-    def get_charging_state(self) -> str:
+    def get_charging_state(self) -> tuple[str]:
         """Get charging state
         
         Read out the charging State refered to EN 61851-1 standard
@@ -127,7 +167,7 @@ class HD_EnergyControl(ModbusRTU):
         """
         value = self.read_input_register(5, 'U16')[0]
         charge_state = (CONSTS.STATE[value], CONSTS.CAR[value], CONSTS.WALLBOX[value])
-        print('[005]\t\tCharge-State : {}'.format(' '.join(charge_state)), end='\n\n')
+        #print('[005]\t\tCharge-State : {}'.format(' '.join(charge_state)), end='\n\n')
         return charge_state
 
     def get_currents_rms(self) -> tuple:
@@ -144,9 +184,9 @@ class HD_EnergyControl(ModbusRTU):
         """
         current_list = self.read_input_register(6, 'U16', 3)
         i = tuple(i/10 for i in current_list)
-        print(f'[006]\t\tL1 Current (rms) : {i[0]:.2f} A')
-        print(f'[007]\t\tL2 Current (rms) : {i[1]:.2f} A')
-        print(f'[008]\t\tL3 Current (rms) : {i[2]:.2f} A', end='\n\n')
+        #print(f'[006]\t\tL1 Current (rms) : {i[0]:.2f} A')
+        #print(f'[007]\t\tL2 Current (rms) : {i[1]:.2f} A')
+        #print(f'[008]\t\tL3 Current (rms) : {i[2]:.2f} A', end='\n\n')
         return i
 
     def get_pcb_temperature(self) -> float:
@@ -163,7 +203,7 @@ class HD_EnergyControl(ModbusRTU):
         """
         data = self.read_input_register(9, 'S16')[0]
         temperature = data/10
-        print(f'[009]\t\tPCB temperature : {temperature:6.2f} °C', end='\n\n')
+        #print(f'[009]\t\tPCB temperature : {temperature:6.2f} °C', end='\n\n')
         return temperature
 
     def get_voltages_rms(self) -> tuple[int]:
@@ -180,12 +220,12 @@ class HD_EnergyControl(ModbusRTU):
         """
         voltage_list = self.read_input_register(10, 'U16', 3)
         u = tuple(voltage_list)
-        print(f'[010]\t\tL1 Voltage (rms) : {u[0]:.1f} V')
-        print(f'[011]\t\tL2 Voltage (rms) : {u[1]:.1f} V')
-        print(f'[012]\t\tL3 Voltage (rms) : {u[2]:.1f} V', end='\n\n')
+        #print(f'[010]\t\tL1 Voltage (rms) : {u[0]:.1f} V')
+        #print(f'[011]\t\tL2 Voltage (rms) : {u[1]:.1f} V')
+        #print(f'[012]\t\tL3 Voltage (rms) : {u[2]:.1f} V', end='\n\n')
         return u
 
-    def get_extern_lock_state(self) -> int:
+    def get_extern_lock_state(self) -> tuple:
         """Get extern lock state
         
         Read out the extern Lock State
@@ -201,8 +241,8 @@ class HD_EnergyControl(ModbusRTU):
         """
         lock = {0: 'System locked', 1: 'System unlocked'}
         lock_state = self.read_input_register(13, 'U16')[0]
-        print(f'[013]\t\tExtern Lock State : {lock[lock_state]}', end='\n\n')
-        return lock_state
+        #print(f'[013]\t\tExtern Lock State : {lock[lock_state]}', end='\n\n')
+        return (lock_state, lock[lock_state])
 
     def get_power(self) -> int:
         """Get the power (sum of all phases)
@@ -217,7 +257,7 @@ class HD_EnergyControl(ModbusRTU):
         Unit; VA
         """
         power = self.read_input_register(14, 'U16')[0]
-        print(f'[014]\t\tPower : {power} VA', end='\n\n')
+        #print(f'[014]\t\tPower : {power} VA', end='\n\n')
         return power
 
     def get_energy_since_power_on(self) -> int:
@@ -243,7 +283,7 @@ class HD_EnergyControl(ModbusRTU):
         energy_high_byte = data[0]
         energy_low_byte = data[1]
         energy = energy_high_byte * pow(2, 16) + energy_low_byte
-        print(f'[015-016]\tEnergy since PowerOn : {energy} VAh', end='\n\n')
+        #print(f'[015-016]\tEnergy since PowerOn : {energy} VAh', end='\n\n')
         return energy
 
     def get_energy_since_installation(self) -> int:
@@ -270,7 +310,7 @@ class HD_EnergyControl(ModbusRTU):
         energy_high_byte = data[0]
         energy_low_byte = data[1]
         energy = energy_high_byte * pow(2, 16) + energy_low_byte
-        print(f'[017-018]\tEnergy since Installation : {energy} VAh', end='\n\n')
+        #print(f'[017-018]\tEnergy since Installation : {energy} VAh', end='\n\n')
         return energy
 
     def get_hw_config_max_current(self) -> int:
@@ -286,7 +326,7 @@ class HD_EnergyControl(ModbusRTU):
         Unit: A
         """
         hw_max_current = self.read_input_register(100, 'U16')[0]
-        print(f'[100]\t\tHardware config max current : {hw_max_current} A', end='\n\n')
+        #print(f'[100]\t\tHardware config max current : {hw_max_current} A', end='\n\n')
         return hw_max_current
 
     def get_hw_config_min_current(self) -> int:
@@ -302,7 +342,7 @@ class HD_EnergyControl(ModbusRTU):
         Unit: A
         """
         hw_min_current = self.read_input_register(101, 'U16')[0]
-        print(f'[101]\t\tHardware config min current : {hw_min_current} A', end='\n\n')
+        #print(f'[101]\t\tHardware config min current : {hw_min_current} A', end='\n\n')
         return hw_min_current
 
     def get_application_software_revision(self) -> int:
@@ -315,7 +355,7 @@ class HD_EnergyControl(ModbusRTU):
         Unit: -
         """
         revision_svn = self.read_input_register(203, 'U16')[0]
-        print(f'[203]\t\tAppl-SW Revision : {revision_svn}', end='\n\n')
+        #print(f'[203]\t\tAppl-SW Revision : {revision_svn}', end='\n\n')
         return revision_svn
 
     def get_watchdog_timeout(self) -> int:
@@ -326,10 +366,10 @@ class HD_EnergyControl(ModbusRTU):
         Unit: ms
         """
         wdt_timeout = self.read_holding_register(257, 'U16')[0]
-        print(f'[257]\t\tWatchDog Timeout : {wdt_timeout} ms', end='\n\n')
+        #print(f'[257]\t\tWatchDog Timeout : {wdt_timeout} ms', end='\n\n')
         return wdt_timeout
 
-    def set_watchdog_timeout(self, timeout_ms = 0) -> int:
+    def set_watchdog_timeout(self, timeout_ms = 0) -> bool:
         """Set the watschdog timeout
         
         Write xx ms in the WatchDog Timeout Register
@@ -338,17 +378,17 @@ class HD_EnergyControl(ModbusRTU):
             timeout_ms (int): timeout value in ms
 
         Returns:
-            results: module response or None
+            results: True if successful, Fasle otherwise
         -----
         Register address: 257; U16
         Function-Code: 0x06
         Unit: ms
         """
-        result = self._client.write_register(257, timeout_ms, slave=self._device_unit_id)
-        print(f'WatchDog Timeout set : {result} ms', end='\n\n')
+        result = self.write_register(257, timeout_ms)
+        #print(f'[257]\t\tWatchDog Timeout set to : {result} ms', end='\n\n')
         return result
 
-    def get_standby_function_control(self) -> str:
+    def get_standby_function_control(self) -> tuple:
         """Read the StandByFunction Control
         -----
         Register address: 258; U16
@@ -356,10 +396,10 @@ class HD_EnergyControl(ModbusRTU):
         Unit: -
         """
         standby = self.read_holding_register(258, 'U16')[0]
-        print(f'[258]\t\tStandBy Function : {CONSTS.STANDBY_FUNCTION[standby]}', end='\n\n')
-        return standby
+        #print(f'[258]\t\tStandBy Function : {CONSTS.STANDBY_FUNCTION[standby]}', end='\n\n')
+        return (standby, CONSTS.STANDBY_FUNCTION[standby])
 
-    def set_standby_function_control(self, state) -> int:
+    def set_standby_function_control(self, state) -> bool:
         """Set the StandByFunction Control
 
         Write into the StandByFunction Control Register
@@ -371,7 +411,7 @@ class HD_EnergyControl(ModbusRTU):
             Don't use other values than 0 and 4!
 
         Returns:
-            result: module response or None
+            result: True if successful, Fasle otherwise
         -----
         Register address: 258; U16
         Function-Code: 0x06
@@ -386,19 +426,34 @@ class HD_EnergyControl(ModbusRTU):
         else:
             # no valid value reached
             print ('ERROR: No valid value for setting the StandBy Function Control')
-            return None
-        result = self._client.write_register(258, _state, slave=self._device_unit_id)
-        print(f'StandBy Function set : {result} ', end='\n\n')
+            return False
+        result = self.write_register(258, _state)
+        #print(f'[258]\t\tStandBy Function set to : {CONSTS.STANDBY_FUNCTION[self.get_standby_function_control()]} ', end='\n\n')
         return result
 
-    def set_remote_lock(self, state) -> int:
+    
+    def get_remote_lock(self) -> tuple:
+        """Get the Remote lock state
+        -----
+        Returns:
+            result: module lock state
+        -----
+        Register address: 259; U16
+        Function-Code: 0x03
+        Unit: -
+        """
+        result = self.read_holding_register(259, 'U16')[0]
+        #print(f'[259]\t\tRemote-Lock state : {CONSTS.REMOTE_LOCK[result]}', end='\n\n')
+        return (result, CONSTS.REMOTE_LOCK[result])
+    
+    def set_remote_lock(self, state) -> bool:
         """Set the Remote lock state
         -----
         Args:
             state (int): 0 = locked / 1 = unlocked
         
         Returns:
-            result: module response or None
+            result: True if successful, Fasle otherwise
         -----
         Register address: 259; U16
         Function-Code: 0x06
@@ -413,9 +468,9 @@ class HD_EnergyControl(ModbusRTU):
         else:
             # no valid value reached
             print ('ERROR: No valid value for setting the Remote Lock')
-            return None
-        result = self._client.write_register(259, _state, slave=self._device_unit_id)
-        print(f'Remote-Lock set : {result}', end='\n\n')
+            return False
+        result = self.write_register(259, _state)
+        #print(f'[259]\t\tRemote-Lock set : {CONSTS.REMOTE_LOCK[self.get_remote_lock()]}', end='\n\n')
         return result
 
     def get_maximal_current_command(self) -> float:
@@ -429,10 +484,10 @@ class HD_EnergyControl(ModbusRTU):
         """
         data = self.read_holding_register(261, 'U16')[0]
         max_current = data/10
-        print(f'[261]\t\tMaximal Charging Current : {max_current:.2f} A', end='\n\n')
+        #print(f'[261]\t\tMaximal Charging Current : {max_current:.2f} A', end='\n\n')
         return max_current
 
-    def set_maximal_current_command(self, max_current = 16.0) -> int:
+    def set_maximal_current_command(self, max_current = 16.0) -> bool:
         """Set maximal current
 
         Write x A in the Maximal Current Command Register
@@ -441,7 +496,7 @@ class HD_EnergyControl(ModbusRTU):
             max_current (float): maximal current in A
         
         Returns:
-            result: module response or None
+            result: True if update was successful; False if not needed 
         -----
         Register address: 261; U16
         Function-Code: 0x06
@@ -462,14 +517,14 @@ class HD_EnergyControl(ModbusRTU):
         actual_current = self.get_maximal_current_command()
         if actual_current == max_current:
             print(f'\tNo need to write into register, because the desired value {max_current} is already in register!', end='\n\n')
-            return None
+            return False
         else:
-            result = self._client.write_register(261, _max_current, slave=self._device_unit_id)
-            print(f'Maximal Charging Current set : {result} A', end='\n\n')
+            result = self.write_register(261, _max_current)
+            #print(f'[261]\t\tMaximal Charging Current set to : {self.get_maximal_current_command()} A', end='\n\n')
             return result
 
 
-    def get_failsafe_current_config(self) -> float:
+    def get_failsafe_current_config(self) -> bool:
         """Get FailSafe Current
         ------
         Register address: 262; U16
@@ -478,10 +533,10 @@ class HD_EnergyControl(ModbusRTU):
         """
         data = self.read_holding_register(262, 'U16')[0]
         fs_current = data/10
-        print(f'[262]\t\tFailSafe Current : {fs_current:.2f} A', end='\n\n')
+        #print(f'[262]\t\tFailSafe Current : {fs_current:.2f} A', end='\n\n')
         return fs_current
 
-    def set_failsafe_current_config(self, fs_current = 16.0) -> int:
+    def set_failsafe_current_config(self, fs_current = 16.0) -> bool:
         """Set Failsafe current
         
         Write x A in the Fail Safe Current Configuration Register
@@ -490,7 +545,7 @@ class HD_EnergyControl(ModbusRTU):
             fs_current (float): fail safe current in A
         
         Returns:
-            result: module response
+            result: True if successful
         -----
         Register address: 262; U16
         Function-Code: 0x06
@@ -502,6 +557,6 @@ class HD_EnergyControl(ModbusRTU):
         elif fs_current < 6.0:
             print (f'Your Input fs_current({fs_current}) is interpreted a 0.0 A, because the value is below 6.0 A')
         _fs_current = int(fs_current * 10)
-        result = self._client.write_register(262, _fs_current, slave=self._device_unit_id)
-        print(f'FailSafe Current set : {result}', end='\n\n')
+        result = self.write_register(262, _fs_current)
+        #print(f'[262]\t\tFailSafe Current set to : {self.get_failsafe_current_config()}', end='\n\n')
         return result
