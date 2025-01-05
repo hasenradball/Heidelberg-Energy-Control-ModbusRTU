@@ -33,6 +33,9 @@ class HdEcConstants:
                9: 'Error', \
                10: 'Wallbox locked or not ready', \
                11: 'Error'}
-    
+
     STANDBY_FUNCTION = {0: 'Standby function enabled', \
                         4: 'Standby function disabled'}
+
+    REMOTE_LOCK = {0: 'locked', \
+                   1: 'unlocked'}
