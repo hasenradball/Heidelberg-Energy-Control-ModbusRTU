@@ -112,11 +112,13 @@ class ModbusRTU:
             data = self._client.convert_from_registers(readings.registers, data_type=self._client.DATATYPE.INT32)
         return data
 
-    def write_register(self, register_address, register_value):
+    def write_register(self, register_address, value):
         """Write register method (code 0x06) with error handling
         """
         try:
-            result = self._client.write_registers(register_address, register_value, \
+            register_values = self._client.convert_to_registers(value, data_type=self._client.DATATYPE.UINT16)
+            #print(register_values)
+            result = self._client.write_registers(register_address, values=register_values, \
                                                      slave=self._device_unit_id)
             #print(result, type(result))
         except ModbusException as exc:
