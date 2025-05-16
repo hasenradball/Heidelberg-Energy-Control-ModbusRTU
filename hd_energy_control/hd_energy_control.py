@@ -21,7 +21,7 @@ class ModbusRTU:
 
 
     def __del__(self):
-        """ Desctructor of ModbusRTU
+        """ Destructor of ModbusRTU
         """
         self.close()
         del self._client
@@ -29,7 +29,7 @@ class ModbusRTU:
 
 
     def connect(self):
-        """Establish conncetion of client
+        """Establish connection of client
         """
         try:
             if self._client.connect():
@@ -37,7 +37,7 @@ class ModbusRTU:
             else:
                 print("ERROR: client cannot connect to Modbus-RTU Device!")
         except Exception as exc:
-            print(f"ERROR: received exception {exc}! Propably an Syntax Error!")
+            print(f"ERROR: received exception {exc}! Probably an Syntax Error!")
 
         finally:
             pass
@@ -95,7 +95,7 @@ class ModbusRTU:
         return data
 
     def decode_register_readings(self, readings, datatype, count):
-        """Decode the register readings dependend on datatype
+        """Decode the register readings depend on datatype
         """
         data = []
         if datatype == 'U16':
@@ -155,7 +155,7 @@ class HDEnergyControl(ModbusRTU):
     def get_charging_state(self) -> tuple[str]:
         """Get charging state
         
-        Read out the charging State refered to EN 61851-1 standard
+        Read out the charging state referred to EN 61851-1 standard
         -----
         Returns:
             charge state
@@ -231,7 +231,7 @@ class HDEnergyControl(ModbusRTU):
         -----
         Returns:
             lock_state
-        0: Sytem locked
+        0: System locked
         1: System unlocked
         -----
         Register address: 13; U16
@@ -377,7 +377,7 @@ class HDEnergyControl(ModbusRTU):
             timeout_ms (int): timeout value in ms
 
         Returns:
-            results: True if successful, Fasle otherwise
+            results: True if successful, False otherwise
         -----
         Register address: 257; U16
         Function-Code: 0x06
@@ -410,7 +410,7 @@ class HDEnergyControl(ModbusRTU):
             Don't use other values than 0 and 4!
 
         Returns:
-            result: True if successful, Fasle otherwise
+            result: True if successful, False otherwise
         -----
         Register address: 258; U16
         Function-Code: 0x06
@@ -452,7 +452,7 @@ class HDEnergyControl(ModbusRTU):
             state (int): 0 = locked / 1 = unlocked
         
         Returns:
-            result: True if successful, Fasle otherwise
+            result: True if successful, False otherwise
         -----
         Register address: 259; U16
         Function-Code: 0x06
@@ -515,7 +515,7 @@ class HDEnergyControl(ModbusRTU):
         # first read the actual regisster value if it is already the same => no need to write again
         actual_current = self.get_maximal_current_command()
         if actual_current == max_current:
-            print(f'[set_maximal_current_command]: value not writen, {max_current} A is already set!', end='\n\n')
+            print(f'[set_maximal_current_command]: value not written, {max_current} A is already set!', end='\n\n')
             return False
         else:
             result = self.write_register(261, _max_current)
