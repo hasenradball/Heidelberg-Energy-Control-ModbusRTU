@@ -1,4 +1,6 @@
 # Heidelberg-Energy-Control-ModbusRTU
+[![Spell Check](https://github.com/hasenradball/Heidelberg-Energy-Control-ModbusRTU/actions/workflows/spell_checker.yml/badge.svg)](https://github.com/hasenradball/Heidelberg-Energy-Control-ModbusRTU/actions/workflows/spell_checker.yml)
+
 python solution for connecting the Heidelberg-EnergyControl Wallbox via ModbusRTU
 
 ![HD_Engery_Control](./docs/HD_EnergyControl.jpg)
