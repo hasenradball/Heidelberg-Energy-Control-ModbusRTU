@@ -23,4 +23,4 @@ jobs:
       - name: Spell check
         uses: codespell-project/actions-codespell@master
         with:
-          skip: ./.git, SMA-Modbus-general-TI-de-10.pdf, SMA_Modbus-TI-de-15.pdf
+          skip: ./.git
