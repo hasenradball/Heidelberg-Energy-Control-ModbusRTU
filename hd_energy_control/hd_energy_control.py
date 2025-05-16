@@ -2,8 +2,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pymodbus.constants import Endian
-from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.client import ModbusSerialClient as ModBusClient
 from pymodbus import (FramerType, ExceptionResponse, ModbusException)
 from .constants import HDEnergyControlConstants as CONSTS
