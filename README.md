@@ -1,4 +1,6 @@
 # Heidelberg-Energy-Control-ModbusRTU
+[![Spell Check](https://github.com/hasenradball/Heidelberg-Energy-Control-ModbusRTU/actions/workflows/spell_checker.yml/badge.svg)](https://github.com/hasenradball/Heidelberg-Energy-Control-ModbusRTU/actions/workflows/spell_checker.yml)
+
 python solution for connecting the Heidelberg-EnergyControl Wallbox via ModbusRTU
 
 ![HD_Engery_Control](./docs/HD_EnergyControl.jpg)
@@ -16,9 +18,7 @@ python solution for connecting the Heidelberg-EnergyControl Wallbox via ModbusRT
 python3 -m pip install pymodbus
 python3 -m pip install pyserial
 ```
-    
->Remark: for pymodbus use minimum the version of 3.6.x
->Remark: for pymodbus use minimum the version of 3.6.x
+>Remark: for pymodbus use minimum the version of 3.9.2, tested with pymodus==3.9.2
 
 ## Usage
 Check the python code in the script `hd_energy_control_modbus_rtu.py`.<br>

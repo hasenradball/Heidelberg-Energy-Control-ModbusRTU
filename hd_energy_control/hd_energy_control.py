@@ -2,10 +2,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pymodbus.constants import Endian
-from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.client import ModbusSerialClient as ModBusClient
-from pymodbus import (ExceptionResponse, ModbusException)
+from pymodbus import (FramerType, ExceptionResponse, ModbusException)
 from .constants import HDEnergyControlConstants as CONSTS
 
 class ModbusRTU:
@@ -16,14 +14,14 @@ class ModbusRTU:
         e.g.: https://www.amperfied.de/en/service-support-e/downloads-e/ 
     """
     def __init__(self, port = "/dev/ttyUSB0", device_unit_id = 1):
-        self._client = ModBusClient(port=port, baudrate = 19200, \
+        self._client = ModBusClient(port=port, framer=FramerType.RTU, baudrate = 19200, \
                                     bytesize = 8, stopbits = 1, parity = 'E')
         self._device_unit_id = device_unit_id
         print("Device Unit: ", self._device_unit_id)
 
 
     def __del__(self):
-        """ Desctructor of ModbusRTU
+        """ Destructor of ModbusRTU
         """
         self.close()
         del self._client
@@ -31,7 +29,7 @@ class ModbusRTU:
 
 
     def connect(self):
-        """Establish conncetion of client
+        """Establish connection of client
         """
         try:
             if self._client.connect():
@@ -39,7 +37,7 @@ class ModbusRTU:
             else:
                 print("ERROR: client cannot connect to Modbus-RTU Device!")
         except Exception as exc:
-            print(f"ERROR: received exception {exc}! Propably an Syntax Error!")
+            print(f"ERROR: received exception {exc}! Probably an Syntax Error!")
 
         finally:
             pass
@@ -59,7 +57,7 @@ class ModbusRTU:
         length = CONSTS.TYPE_TO_LENGTH[datatype] * count
         #print(f'length : {length}')
         try:
-            result = self._client.read_input_registers(register_address, length, \
+            result = self._client.read_input_registers(register_address, count=length, \
                                                      slave=self._device_unit_id)
             #print(result, type(result))
         except ModbusException as exc:
@@ -81,7 +79,7 @@ class ModbusRTU:
         length = CONSTS.TYPE_TO_LENGTH[datatype] * count
         #print(f'length : {length}')
         try:
-            result = self._client.read_holding_registers(register_address, length, \
+            result = self._client.read_holding_registers(register_address, count=length, \
                                                      slave=self._device_unit_id)
             #print(result, type(result))
         except ModbusException as exc:
@@ -97,29 +95,28 @@ class ModbusRTU:
         return data
 
     def decode_register_readings(self, readings, datatype, count):
-        """Decode the register readings dependend on datatype
+        """Decode the register readings depend on datatype
         """
-        decoder = BinaryPayloadDecoder.fromRegisters(readings.registers, \
-                                                     byteorder=Endian.BIG, wordorder=Endian.BIG)
-        #print(f'decoder : {decoder}')
         data = []
         if datatype == 'U16':
-            data = [decoder.decode_16bit_uint() for i in range(count)]
+            data = self._client.convert_from_registers(readings.registers, data_type=self._client.DATATYPE.UINT16)
         elif datatype == 'U32':
-            data = [decoder.decode_32bit_uint() for i in range(count)]
+            data = self._client.convert_from_registers(readings.registers, data_type=self._client.DATATYPE.UINT32)
         elif datatype == 'U64':
-            data = [decoder.decode_64bit_uint() for i in range(count)]
+            data = self._client.convert_from_registers(readings.registers, data_type=self._client.DATATYPE.UINT64)
         elif datatype == 'S16':
-            data = [decoder.decode_16bit_int() for i in range(count)]
+            data = self._client.convert_from_registers(readings.registers, data_type=self._client.DATATYPE.INT16)
         elif datatype == 'S32':
-            data = [decoder.decode_32bit_int() for i in range(count)]
+            data = self._client.convert_from_registers(readings.registers, data_type=self._client.DATATYPE.INT32)
         return data
 
-    def write_register(self, register_address, register_value):
+    def write_register(self, register_address, value):
         """Write register method (code 0x06) with error handling
         """
         try:
-            result = self._client.write_registers(register_address, register_value, \
+            register_values = self._client.convert_to_registers(value, data_type=self._client.DATATYPE.UINT16)
+            #print(register_values)
+            result = self._client.write_registers(register_address, values=register_values, \
                                                      slave=self._device_unit_id)
             #print(result, type(result))
         except ModbusException as exc:
@@ -148,7 +145,7 @@ class HDEnergyControl(ModbusRTU):
         Register address: 4; U16
         Function-Code: 0x04
         """
-        version_dec = self.read_input_register(4, 'U16')[0]
+        version_dec = self.read_input_register(4, 'U16')
         #print(type(result.registers), ": ", result.registers)
         version_hex = f"{version_dec:0x}"
         version_str = f"v{'.'.join(f'{char}' for char in version_hex)}"
@@ -158,7 +155,7 @@ class HDEnergyControl(ModbusRTU):
     def get_charging_state(self) -> tuple[str]:
         """Get charging state
         
-        Read out the charging State refered to EN 61851-1 standard
+        Read out the charging state referred to EN 61851-1 standard
         -----
         Returns:
             charge state
@@ -167,7 +164,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code:      0x04
         Unit: 1
         """
-        value = self.read_input_register(5, 'U16')[0]
+        value = self.read_input_register(5, 'U16')
         charge_state = (CONSTS.STATE[value], CONSTS.CAR[value], CONSTS.WALLBOX[value])
         #print('[005]\t\tCharge-State : {}'.format(' '.join(charge_state)), end='\n\n')
         return charge_state
@@ -203,7 +200,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x04
         Unit: °C
         """
-        data = self.read_input_register(9, 'S16')[0]
+        data = self.read_input_register(9, 'S16')
         temperature = data/10
         #print(f'[009]\t\tPCB temperature : {temperature:6.2f} °C', end='\n\n')
         return temperature
@@ -234,7 +231,7 @@ class HDEnergyControl(ModbusRTU):
         -----
         Returns:
             lock_state
-        0: Sytem locked
+        0: System locked
         1: System unlocked
         -----
         Register address: 13; U16
@@ -242,7 +239,7 @@ class HDEnergyControl(ModbusRTU):
         Unit: 1
         """
         lock = {0: 'System locked', 1: 'System unlocked'}
-        lock_state = self.read_input_register(13, 'U16')[0]
+        lock_state = self.read_input_register(13, 'U16')
         #print(f'[013]\t\tExtern Lock State : {lock[lock_state]}', end='\n\n')
         return (lock_state, lock[lock_state])
 
@@ -258,7 +255,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x04
         Unit; VA
         """
-        power = self.read_input_register(14, 'U16')[0]
+        power = self.read_input_register(14, 'U16')
         #print(f'[014]\t\tPower : {power} VA', end='\n\n')
         return power
 
@@ -327,7 +324,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x04
         Unit: A
         """
-        hw_max_current = self.read_input_register(100, 'U16')[0]
+        hw_max_current = self.read_input_register(100, 'U16')
         #print(f'[100]\t\tHardware config max current : {hw_max_current} A', end='\n\n')
         return hw_max_current
 
@@ -343,7 +340,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x04
         Unit: A
         """
-        hw_min_current = self.read_input_register(101, 'U16')[0]
+        hw_min_current = self.read_input_register(101, 'U16')
         #print(f'[101]\t\tHardware config min current : {hw_min_current} A', end='\n\n')
         return hw_min_current
 
@@ -356,7 +353,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x04
         Unit: -
         """
-        revision_svn = self.read_input_register(203, 'U16')[0]
+        revision_svn = self.read_input_register(203, 'U16')
         #print(f'[203]\t\tAppl-SW Revision : {revision_svn}', end='\n\n')
         return revision_svn
 
@@ -367,7 +364,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x03
         Unit: ms
         """
-        wdt_timeout = self.read_holding_register(257, 'U16')[0]
+        wdt_timeout = self.read_holding_register(257, 'U16')
         #print(f'[257]\t\tWatchDog Timeout : {wdt_timeout} ms', end='\n\n')
         return wdt_timeout
 
@@ -380,7 +377,7 @@ class HDEnergyControl(ModbusRTU):
             timeout_ms (int): timeout value in ms
 
         Returns:
-            results: True if successful, Fasle otherwise
+            results: True if successful, False otherwise
         -----
         Register address: 257; U16
         Function-Code: 0x06
@@ -397,7 +394,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x03
         Unit: -
         """
-        standby = self.read_holding_register(258, 'U16')[0]
+        standby = self.read_holding_register(258, 'U16')
         #print(f'[258]\t\tStandBy Function : {CONSTS.STANDBY_FUNCTION[standby]}', end='\n\n')
         return (standby, CONSTS.STANDBY_FUNCTION[standby])
 
@@ -413,7 +410,7 @@ class HDEnergyControl(ModbusRTU):
             Don't use other values than 0 and 4!
 
         Returns:
-            result: True if successful, Fasle otherwise
+            result: True if successful, False otherwise
         -----
         Register address: 258; U16
         Function-Code: 0x06
@@ -444,7 +441,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x03
         Unit: -
         """
-        result = self.read_holding_register(259, 'U16')[0]
+        result = self.read_holding_register(259, 'U16')
         #print(f'[259]\t\tRemote-Lock state : {CONSTS.REMOTE_LOCK[result]}', end='\n\n')
         return (result, CONSTS.REMOTE_LOCK[result])
 
@@ -455,7 +452,7 @@ class HDEnergyControl(ModbusRTU):
             state (int): 0 = locked / 1 = unlocked
         
         Returns:
-            result: True if successful, Fasle otherwise
+            result: True if successful, False otherwise
         -----
         Register address: 259; U16
         Function-Code: 0x06
@@ -484,7 +481,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x03
         Unit: A
         """
-        data = self.read_holding_register(261, 'U16')[0]
+        data = self.read_holding_register(261, 'U16')
         max_current = data/10
         #print(f'[261]\t\tMaximal Charging Current : {max_current:.2f} A', end='\n\n')
         return max_current
@@ -518,7 +515,7 @@ class HDEnergyControl(ModbusRTU):
         # first read the actual regisster value if it is already the same => no need to write again
         actual_current = self.get_maximal_current_command()
         if actual_current == max_current:
-            print(f'[set_maximal_current_command]: value not writen, {max_current} A is already set!', end='\n\n')
+            print(f'[set_maximal_current_command]: value not written, {max_current} A is already set!', end='\n\n')
             return False
         else:
             result = self.write_register(261, _max_current)
@@ -533,7 +530,7 @@ class HDEnergyControl(ModbusRTU):
         Function-Code: 0x03
         Unit: A
         """
-        data = self.read_holding_register(262, 'U16')[0]
+        data = self.read_holding_register(262, 'U16')
         fs_current = data/10
         #print(f'[262]\t\tFailSafe Current : {fs_current:.2f} A', end='\n\n')
         return fs_current
