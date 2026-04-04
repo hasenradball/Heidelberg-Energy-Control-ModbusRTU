@@ -58,7 +58,7 @@ class ModbusRTU:
         #print(f'length : {length}')
         try:
             result = self._client.read_input_registers(register_address, count=length, \
-                                                     slave=self._device_unit_id)
+                                                     device_id=self._device_unit_id)
             #print(result, type(result))
         except ModbusException as exc:
             print(f">>> read_input_register: Received ModbusException({exc}) from library")
@@ -80,7 +80,7 @@ class ModbusRTU:
         #print(f'length : {length}')
         try:
             result = self._client.read_holding_registers(register_address, count=length, \
-                                                     slave=self._device_unit_id)
+                                                     device_id=self._device_unit_id)
             #print(result, type(result))
         except ModbusException as exc:
             print(f">>> read_holding_register: Received ModbusException({exc}) from library")
@@ -117,7 +117,7 @@ class ModbusRTU:
             register_values = self._client.convert_to_registers(value, data_type=self._client.DATATYPE.UINT16)
             #print(register_values)
             result = self._client.write_registers(register_address, values=register_values, \
-                                                     slave=self._device_unit_id)
+                                                     device_id=self._device_unit_id)
             #print(result, type(result))
         except ModbusException as exc:
             print(f">>> write_register: Received ModbusException({exc}) from library")
