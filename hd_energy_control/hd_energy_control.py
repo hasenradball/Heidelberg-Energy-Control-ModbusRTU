@@ -69,6 +69,7 @@ class ModbusRTU:
                 return False
         except ModbusException as exc:
             print(f">>> read_input_register: Received ModbusException({exc}) from library")
+            return False
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -92,6 +93,7 @@ class ModbusRTU:
                 return False
         except ModbusException as exc:
             print(f">>> read_holding_register: Received ModbusException({exc}) from library")
+            return False
         #print(type(result.registers), ": ", result.registers)
         data = self.decode_register_readings(result, datatype, count)
         return data
@@ -130,6 +132,7 @@ class ModbusRTU:
                 return False
         except ModbusException as exc:
             print(f">>> write_register: Received ModbusException({exc}) from library")
+            return False
         return True
 
 
