@@ -82,6 +82,45 @@ cd /path/to/your/installation/folder
 ~/my_python_venvs/bin/python HD_EnergyControl_ModbusRTU.py
 ```
 
+## Usage of systemd service
+to use the python code via systemd service follow the following instructions.
+
+a) create a file in folder `/etc/systemd/system` like `wallbox.service`
+
+b) copy the following content inside the service file
+
+c) reload the daemon `sudo systemctl daemon-reload`
+
+d) enable and start the service:
+```
+sudo systemctl start wallbox.service
+sudo systemctl enable wallbox.service
+```
+
+```
+[Unit]
+Description=Wallbox Kommunication Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=frank
+Group=frank
+
+ExecStart=/home/frank/senv/bin/python /usr/local/bin/python/Heidelberg_EnergyControl/send_maxSystemCurrent_service.py
+
+StandardOutput=null
+StandardError=journal
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+
 # License
 This library is licensed under MIT Licence.
 
