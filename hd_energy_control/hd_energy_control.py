@@ -135,8 +135,6 @@ class ModbusRTU:
             raise
         return True
 
-
-
 class HDEnergyControl(ModbusRTU):
     """class for connecting the Wallbox Heidelberg Energy Control
     """
